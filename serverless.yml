@@ -65,14 +65,6 @@ functions:
           path: user
           method: get
           cors: true
-  
-  getAllTodos:
-    handler: handler.getAllTodos
-    events:
-      - http:
-          path: todo
-          method: get
-          cors: true
 
 plugins:
   - serverless-offline

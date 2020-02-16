@@ -65,6 +65,22 @@ functions:
           path: user
           method: get
           cors: true
+  
+  createUser:
+    handler: handler.createUser
+    events:
+      - http:
+          path: user
+          method: post
+          cors: true
+          
+  modelSync:
+    handler: handler.modelSync
+    events:
+      - http:
+          path: sync
+          method: post
+          cors: true
 
 plugins:
   - serverless-offline

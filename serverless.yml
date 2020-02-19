@@ -73,6 +73,38 @@ functions:
           path: user
           method: post
           cors: true
+  
+  createTeam:
+    handler: handler.createTeam
+    events:
+      - http:
+          path: team
+          method: post
+          cors: true
+
+  addUserToTeam:
+    handler: handler.addUserToTeam
+    events:
+      - http:
+          path: user/team
+          method: post
+          cors: true
+
+  teamUsers: 
+    handler: handler.teamUsers
+    events:
+      - http:
+          path: team/users
+          method: get
+          cors: true
+
+  createSession:
+    handler: handler.createSession
+    events:
+      - http:
+          path: session
+          method: post
+          cors: true
           
   modelSync:
     handler: handler.modelSync

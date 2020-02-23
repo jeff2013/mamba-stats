@@ -11,7 +11,7 @@ const { RandomToken } = require('@sibevin/random-token')
  **************************
  */
 
-module.exports.getAllUsers = async (event, context, callback) => {
+module.exports.getAllUsers = (event, context, callback) => {
   context.callbackWaitsForEmptyEventLoop = false;
 
   const textResponseHeaders = {
@@ -22,7 +22,7 @@ module.exports.getAllUsers = async (event, context, callback) => {
     'Content-Type': 'application/json'
   };
 
-  await User.findAll()
+  return User.findAll()
     .then(users => {
       console.log(users);
         const response = {
@@ -72,6 +72,59 @@ module.exports.createUser = (event, context, callback) => {
   })
 };
 
+module.exports.updateUser = (event, context, callback) => {
+  context.callbackWaitsForEmptyEventLoop = false;
+
+  const textResponseHeaders = {
+    'Content-Type': 'text/plain'
+  };
+
+  const jsonResponseHeaders = {
+    'Content-Type': 'application/json'
+  };
+
+  var newUserData = JSON.parse(event.body);
+  return User.update(newUserData, {returning: true, where: {id: newUserData.id}}).then(user => {
+    const response = {
+      statusCode: 200,
+      headers: jsonResponseHeaders,
+      body: JSON.stringify(user)
+    };
+    callback(null, response);
+  }).catch(e => {
+    callback(null, {
+      statusCode: 404, 
+      headers: textResponseHeaders, 
+      body: "Couldn't update a user" + e
+    })
+  })
+};
+
+
+module.exports.deleteUser = (event, context, callback) => {
+  context.callbackWaitsForEmptyEventLoop = false;
+
+  const textResponseHeaders = {
+    'Content-Type': 'text/plain'
+  };
+  
+  return User.destroy({
+    where: { id: event.pathParameters.id }
+  }).then(deleted => {
+    const response = {
+      statusCode: 204, 
+      headers: textResponseHeaders,
+      body: "User deleted"
+    };
+    callback(null, response)
+  }).catch(e => {
+    callback(null, {
+      statusCode: 400, 
+      headers: textResponseHeaders, 
+      body: "Couldn't delete a user" + e
+    })
+  })
+}
 /**
  **************************
  ********* TEAMS **********

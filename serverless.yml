@@ -73,6 +73,26 @@ functions:
           path: user
           method: post
           cors: true
+
+  updateUser:
+    handler: handler.updateUser
+    events:
+      - http:
+          path: user/update
+          method: post
+          cors: true
+
+  deleteUser:
+    handler: handler.deleteUser
+    events:
+      - http:
+          path: user/{id}
+          method: delete
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                id: true
   
   createTeam:
     handler: handler.createTeam

@@ -79,7 +79,7 @@ functions:
     events:
       - http:
           path: user/update
-          method: post
+          method: put
           cors: true
 
   deleteUser:

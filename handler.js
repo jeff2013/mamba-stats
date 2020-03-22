@@ -58,14 +58,14 @@ module.exports.createUser = (event, context, callback) => {
     JSON.parse(event.body)
   ).then(user => {
     const response = {
-      statusCode: 200, 
+      statusCode: 201, 
       headers: jsonResponseHeaders,
       body: JSON.stringify(user)
     };
     callback(null, response)
   }).catch(e => {
     callback(null, {
-      statusCode: 409, 
+      statusCode: 400, 
       headers: textResponseHeaders, 
       body: "Couldn't create a user"
     })
@@ -86,14 +86,14 @@ module.exports.updateUser = (event, context, callback) => {
   var newUserData = JSON.parse(event.body);
   return User.update(newUserData, {returning: true, where: {id: newUserData.id}}).then(user => {
     const response = {
-      statusCode: 200,
+      statusCode: 202,
       headers: jsonResponseHeaders,
       body: JSON.stringify(user)
     };
     callback(null, response);
   }).catch(e => {
     callback(null, {
-      statusCode: 404, 
+      statusCode: 400, 
       headers: textResponseHeaders, 
       body: "Couldn't update a user" + e
     })
@@ -146,14 +146,14 @@ module.exports.deleteUser = (event, context, callback) => {
     JSON.parse(event.body)
   ).then(team => {
     const response = {
-      statusCode: 200, 
+      statusCode: 201, 
       headers: jsonResponseHeaders,
       body: JSON.stringify(team)
     };
     callback(null, response)
   }).catch(e => {
     callback(null, {
-      statusCode: 409, 
+      statusCode: 400, 
       headers: textResponseHeaders, 
       body: "Couldn't create a user"
     })
@@ -161,6 +161,8 @@ module.exports.deleteUser = (event, context, callback) => {
  };
 
  /**
+  * 
+  * Get all users for a given team
   * 
   * @param team_id
   */
@@ -312,7 +314,7 @@ module.exports.modelSync = async (event, context, callback) => {
     const response = {
       statusCode: 501,
       headers: textResponseHeaders,
-      body: "Couldn't sync models to database " + error
+      body: "Couldn't sync models to database " + err
     };
     callback(null, response);  
   });

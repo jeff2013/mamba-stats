@@ -9,7 +9,20 @@ module.exports = function(sequelize, DataTypes) {
         },
         name: {
             type: DataTypes.STRING,
-            allowNull: false
+            unique: true,
+            allowNull: false,
+            validate: {
+                customValidator(value) {
+                    if (value === null || value === "") {
+                        throw new Error("No name provided");
+                    }
+                }
+            }
+        },
+        position: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: 'Guard'
         },
         team_id: {
             type: DataTypes.UUID 

@@ -24,9 +24,6 @@ module.exports = function(sequelize, DataTypes) {
             allowNull: false,
             defaultValue: 'Guard'
         },
-        team_id: {
-            type: DataTypes.UUID 
-        },
         ppg: {
             type: DataTypes.REAL,
             defaultValue: 0.0

@@ -1,7 +1,7 @@
 'use strict';
 
 let db = require('./db_connect.js');
-let {Team, User, Session} = require('./models/models')(db.sequelize, db.Sequelize);
+let {Team, User, TeamUser, Session} = require('./models/models')(db.sequelize, db.Sequelize);
 let sync = require('./models/sync.js');
 const { RandomToken } = require('@sibevin/random-token')
 
@@ -142,23 +142,74 @@ module.exports.deleteUser = (event, context, callback) => {
     'Content-Type': 'application/json'
   };
 
-  return Team.create(
-    JSON.parse(event.body)
+  const data = JSON.parse(event.body);
+  const name = data.team.name;
+  const playerIds = data.team.players;
+
+  return Team.create({name: name}
   ).then(team => {
+    this.team = team;
+    const teamUsers = [];
+    playerIds.map(id => {
+      teamUsers.push(
+        TeamUser.create({
+          teamId: team.id,
+          userId: id
+        })
+       );
+    })
+
+    return Promise.all(teamUsers);
+  }).then(_ => {
     const response = {
       statusCode: 201, 
       headers: jsonResponseHeaders,
-      body: JSON.stringify(team)
+      body: JSON.stringify(this.team)
     };
     callback(null, response)
   }).catch(e => {
+    console.log(e);
     callback(null, {
       statusCode: 400, 
       headers: textResponseHeaders, 
-      body: "Couldn't create a user"
+      body: "Failed to create the team."
     })
   });
  };
+
+ module.exports.getAllTeams = (event, context, callback) => {
+   context.callbackWaitsForEmptyEventLoop = false;
+
+   const textResponseHeaders = {
+    'Content-Type': 'text/plain'
+  };
+
+  const jsonResponseHeaders = {
+    'Content-Type': 'application/json'
+  };
+
+  return Team.findAll({
+      include: [{
+        model: User
+      }]
+    })
+    .then(teams => {
+      const response = {
+        statusCode: 200,
+        headers: jsonResponseHeaders,
+        body: JSON.stringify(teams),
+      };
+      callback(null, response);
+    })
+    .catch(err => {
+      console.error(err);
+      callback(null, {
+        statusCode: 400,
+        headers: textResponseHeaders,
+        body: "Couldn't find Teams, Error finding from DB, Error: " + err
+    });
+    })
+ }
 
  /**
   * 

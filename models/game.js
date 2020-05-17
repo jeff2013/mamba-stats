@@ -1,5 +1,5 @@
 module.exports  = function(sequelize, DataTypes) {
-    var Game = sequelize.define('session', {
+    var Game = sequelize.define('game', {
         id: {
             type: DataTypes.UUID,
             allowNUll: false,

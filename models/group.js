@@ -1,5 +1,5 @@
-module.exports = function(sequelize, DataTypes) {
-    var Session = sequelize.define('session', {
+module.exports  = function(sequelize, DataTypes) {
+    var Group = sequelize.define('group', {
         id: {
             type: DataTypes.UUID,
             allowNull: false,
@@ -12,12 +12,11 @@ module.exports = function(sequelize, DataTypes) {
             unique: true,
             allowNull: false
         },
-        date: {
-            type: DataTypes.DATE
+        password: {
+            type: DataTypes.STRING,
+            unique: false,
+            allowNull: false
         }
-    },{
-        paranoid: true,
-        timestamps: true
     })
-    return Session;
+    return Group;
 }

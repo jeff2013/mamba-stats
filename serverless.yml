@@ -12,6 +12,10 @@
 # Happy Coding!
 
 service: mamba-stats
+
+custom:
+  secrets: ${file(secrets.json)}
+  
 # app and org for use with dashboard.serverless.com
 app: mamba-stats
 org: jeffchang
@@ -23,6 +27,8 @@ org: jeffchang
 provider:
   name: aws
   runtime: nodejs12.x
+  environment:
+    JWT_SECRET: ${self:custom.secrets.JWT_SECRET}
 
 # you can overwrite defaults here
 #  stage: dev
@@ -131,6 +137,34 @@ functions:
     events:
       - http:
           path: session
+          method: post
+          cors: true
+
+  createGroup:
+    handler: handler.createGroup
+    events:
+      - http:
+          path: group
+          method: post
+          cors: true
+
+  verify-token:
+    handler: auth/VerifyToken.auth
+
+  me:
+    handler: handler.me
+    events:
+      - http:
+          path: me
+          method: get
+          cors: true
+          authorizer: verify-token
+
+  login: 
+    handler: handler.login
+    events:
+      - http:
+          path: login
           method: post
           cors: true
           

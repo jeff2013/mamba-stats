@@ -71,6 +71,7 @@ functions:
           path: user
           method: get
           cors: true
+          authorizer: verify-token
   
   createUser:
     handler: handler.createUser
@@ -79,6 +80,7 @@ functions:
           path: user
           method: post
           cors: true
+          authorizer: verify-token
 
   updateUser:
     handler: handler.updateUser
@@ -87,6 +89,7 @@ functions:
           path: user/update
           method: put
           cors: true
+          authorizer: verify-token
 
   deleteUser:
     handler: handler.deleteUser
@@ -99,6 +102,7 @@ functions:
             parameters:
               querystrings:
                 id: true
+          authorizer: verify-token
   
   createTeam:
     handler: handler.createTeam
@@ -107,6 +111,7 @@ functions:
           path: team
           method: post
           cors: true
+          authorizer: verify-token
 
   getAllTeams:
     handler: handler.getAllTeams
@@ -115,6 +120,7 @@ functions:
           path: team
           method: get
           cors: true
+          authorizer: verify-token
 
   addUserToTeam:
     handler: handler.addUserToTeam
@@ -123,6 +129,7 @@ functions:
           path: user/team
           method: post
           cors: true
+          authorizer: verify-token
 
   teamUsers: 
     handler: handler.teamUsers

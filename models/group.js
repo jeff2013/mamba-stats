@@ -3,13 +3,18 @@ module.exports  = function(sequelize, DataTypes) {
         id: {
             type: DataTypes.UUID,
             allowNull: false,
-            primaryKey: true, 
             unique: true,
             defaultValue: DataTypes.UUIDV1
+        },
+        name: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true
         },
         token: {
             type: DataTypes.STRING,
             unique: true,
+            primaryKey: true,
             allowNull: false
         },
         password: {

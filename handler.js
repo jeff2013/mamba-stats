@@ -23,24 +23,22 @@ module.exports.getAllUsers = (event, context, callback) => {
   const jsonResponseHeaders = {
     'Content-Type': 'application/json'
   };
-
-  const groupId = JSON.parse(event.body).groupId
+  
+  const groupId = event.requestContext.authorizer.principalId
   return User.findAll({
     where: {
-      groupId: groupId
+      groupToken: groupId
     }
   })
     .then(users => {
-      console.log(users);
-        const response = {
-            statusCode: 200,
-            headers: jsonResponseHeaders,
-            body: JSON.stringify(users),
-        };
+      const response = {
+          statusCode: 200,
+          headers: jsonResponseHeaders,
+          body: JSON.stringify(users),
+      };
       callback(null, response);
     })
     .catch(error => {
-      console.error(error);
       callback(null, {
           statusCode: 501,
           headers: textResponseHeaders,
@@ -61,8 +59,13 @@ module.exports.createUser = (event, context, callback) => {
   };
 
   // WRITE SOME SORT OF VALIDATION
+
+  var token = event.requestContext.authorizer.principalId || '';
   return User.create(
-    JSON.parse(event.body)
+    {
+      ...JSON.parse(event.body),
+      groupToken: token
+    }
   ).then(user => {
     const response = {
       statusCode: 201, 
@@ -74,7 +77,7 @@ module.exports.createUser = (event, context, callback) => {
     callback(null, {
       statusCode: 400, 
       headers: textResponseHeaders, 
-      body: "Couldn't create a user"
+      body: "Couldn't create a user" + e
     })
   })
 };
@@ -90,8 +93,10 @@ module.exports.updateUser = (event, context, callback) => {
     'Content-Type': 'application/json'
   };
 
+  var token = event.requestContext.authorizer.principalId || '';
   var newUserData = JSON.parse(event.body);
-  return User.update(newUserData, {returning: true, where: {id: newUserData.id}}).then(user => {
+  // FIX ME AND ADD TOKEN
+  return User.update(newUserData, {returning: true, where: {id: newUserData.id, groupToken: token}}).then(user => {
     const response = {
       statusCode: 202,
       headers: jsonResponseHeaders,
@@ -115,8 +120,9 @@ module.exports.deleteUser = (event, context, callback) => {
     'Content-Type': 'text/plain'
   };
   
+  var token = event.requestContext.authorizer.principalId || '';
   return User.destroy({
-    where: { id: event.pathParameters.id }
+    where: { id: event.pathParameters.id, groupToken: token }
   }).then(deleted => {
     const response = {
       statusCode: 204, 
@@ -152,8 +158,9 @@ module.exports.deleteUser = (event, context, callback) => {
   const data = JSON.parse(event.body);
   const name = data.team.name;
   const playerIds = data.team.players;
+  var token = event.requestContext.authorizer.principalId || '';
 
-  return Team.create({name: name}
+  return Team.create({name: name, groupToken: token}
   ).then(team => {
     this.team = team;
     const teamUsers = [];
@@ -168,10 +175,25 @@ module.exports.deleteUser = (event, context, callback) => {
 
     return Promise.all(teamUsers);
   }).then(_ => {
+
+    /**
+     * FIXME
+     * Find a more efficient way of doing this...
+     */
+    return Team.findOne({
+      include: [{
+        model: User
+      }],
+      where: {
+        groupToken: token,
+        id: this.team.id
+      }
+    })
+  }).then(team =>{
     const response = {
       statusCode: 201, 
       headers: jsonResponseHeaders,
-      body: JSON.stringify(this.team)
+      body: JSON.stringify(team)
     };
     callback(null, response)
   }).catch(e => {
@@ -195,10 +217,15 @@ module.exports.deleteUser = (event, context, callback) => {
     'Content-Type': 'application/json'
   };
 
+  var token = event.requestContext.authorizer.principalId || '';
+
   return Team.findAll({
       include: [{
         model: User
-      }]
+      }],
+      where: {
+        groupToken: token
+      }
     })
     .then(teams => {
       const response = {
@@ -403,11 +430,11 @@ module.exports.deleteUser = (event, context, callback) => {
 
     var loginData = event.body ? JSON.parse(event.body) : {};
     var group = null;
+    var groupName = loginData['name'] || '';
     var password = loginData['password'] || '';
-    var token = loginData['token'] || '';
     return Group.findOne({
       where: {
-        token: token
+        name: groupName
       }
     })
     .then(group => {
@@ -499,8 +526,6 @@ function me(token) {
 }
 
 function signToken(id) {
-  console.log(id);
-  console.log(process.env.JWT_SECRET)
   return jwt.sign({ id: id }, process.env.JWT_SECRET, {
     expiresIn: 86400 // expires in 24 hours
   });

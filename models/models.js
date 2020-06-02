@@ -10,6 +10,7 @@ module.exports = function(sequelize, DataTypes) {
     var Session = require('./session')(sequelize, DataTypes);
     var Game = require('./game')(sequelize, DataTypes);
     var Group = require('./group')(sequelize, DataTypes);
+    var GameStat = require('./game_stats')(sequelize, DataTypes);
 
     /**
      * ASSOCIATIONS
@@ -24,7 +25,9 @@ module.exports = function(sequelize, DataTypes) {
     Session.belongsTo(Group);
     Session.hasMany(Game);
     Game.belongsTo(Session);
+    
+    Game.hasMany(GameStat);
+    User.hasMany(GameStat);
 
-
-    return {Team, User, TeamUser, Session, Group};
+    return {Team, User, TeamUser, Session, Group, Game, GameStat};
 }

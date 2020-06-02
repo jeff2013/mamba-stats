@@ -1,11 +1,13 @@
 'use strict';
 
 let db = require('./db_connect.js');
-let {Team, User, TeamUser, Session, Group} = require('./models/models')(db.sequelize, db.Sequelize);
+let {Team, User, TeamUser, Session, Group, Game, GameStat} = require('./models/models')(db.sequelize, db.Sequelize);
 let sync = require('./models/sync.js');
 const { RandomToken } = require('@sibevin/random-token')
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs-then');
+const moment = require('moment');
+const Op = db.Sequelize.Op;
 
 /**
  **************************
@@ -337,9 +339,6 @@ module.exports.deleteUser = (event, context, callback) => {
  **************************
  */
 
- /**
-  * 
-  */
  module.exports.createSession = (event, context, callback) => {
   context.callbackWaitsForEmptyEventLoop = false;
 
@@ -350,12 +349,19 @@ module.exports.deleteUser = (event, context, callback) => {
   const jsonResponseHeaders = {
     'Content-Type': 'application/json'
   };
-  console.log(event.body);
-  var sessionData = event.body ? JSON.parse(event.body) : {};
-  sessionData["token"] = RandomToken.gen({length: 4});
-  console.log(sessionData);
+
+  var token = event.requestContext.authorizer.principalId || '';
+  /**
+   * TODO: Add ability to define custom durations
+   */
+  var duration = 24;
   return Session.create(
-    sessionData
+    {
+      ...JSON.parse(event.body),
+      end_date: moment().add(duration, 'hours').toDate(),
+      duration: duration,
+      groupToken: token
+    }
   ).then(session => {
     const response = {
       statusCode: 200, 
@@ -372,6 +378,205 @@ module.exports.deleteUser = (event, context, callback) => {
     })
   });
  }
+
+ module.exports.getSession = (event, context, callback) => {
+  context.callbackWaitsForEmptyEventLoop = false;
+
+  const textResponseHeaders = {
+    'Content-Type': 'text/plain'
+  };
+
+  const jsonResponseHeaders = {
+    'Content-Type': 'application/json'
+  };
+
+  var token = event.requestContext.authorizer.principalId || '';
+
+  return Session.findOne({
+    where: {
+      groupToken: token,
+      end_date: {
+        [Op.gte]: moment().toDate()
+      }
+    },
+    include: [{
+      model: Game,
+      where: {
+        active: true
+      },
+      required: false
+    }]
+  }).then(session => {
+    console.log(session);
+    const response = {
+      statusCode: 200, 
+      headers: jsonResponseHeaders,
+      body: JSON.stringify(session)
+    };
+    callback(null, response)
+  }).catch(e => {
+    callback(null, {
+      statusCode: 404, 
+      headers: textResponseHeaders, 
+      body: "Couldn't find a session" + e
+    })
+  });
+ }
+
+
+/**
+ **************************
+ ********** GAME **********
+ **************************
+ */
+
+ module.exports.fetchActiveGame = (event, context, callback) => {
+   context.callbackWaitsForEmptyEventLoop = false;
+
+   const textResponseHeaders = {
+    'Content-Type': 'text/plain'
+    };
+
+    const jsonResponseHeaders = {
+      'Content-Type': 'application/json'
+    };
+
+    var token = event.requestContext.authorizer.principalId || '';
+
+    return Game.findOne({
+      where: {
+        groupToken: token
+      }
+    })
+ }
+
+ module.exports.createGame = (event, context, callback) => {
+  context.callbackWaitsForEmptyEventLoop = false;
+
+  const textResponseHeaders = {
+   'Content-Type': 'text/plain'
+   };
+
+   const jsonResponseHeaders = {
+     'Content-Type': 'application/json'
+   };
+
+   var gameData = event.body ? JSON.parse(event.body) : {};
+   gameData["active"] = true;
+
+   Game.create(gameData).then(game => {
+    const response = {
+      statusCode: 200, 
+      headers: jsonResponseHeaders,
+      body: JSON.stringify(game)
+    };
+    callback(null, response)
+   }).catch(e => {
+    callback(null, {
+      statusCode: 404, 
+      headers: textResponseHeaders, 
+      body: "Couldn't create game" + e
+    })
+   })
+  }
+
+  /**
+    *   gameId: 
+    *   userId: 
+    *   teamType: 
+    *   statType: 
+    * 
+    * Fix me this query is so damn inefficient lol
+   */
+  module.exports.addGameStats = (event, context, callback) => {
+    context.callbackWaitsForEmptyEventLoop = false;
+
+    const textResponseHeaders = {
+      'Content-Type': 'text/plain'
+    };
+  
+    const jsonResponseHeaders = {
+      'Content-Type': 'application/json'
+    };
+
+    var token = event.requestContext.authorizer.principalId || '';
+
+    var gameStatData = event.body ? JSON.parse(event.body) : {};
+    
+    const teamType = gameStatData['teamType'];
+    const statType = gameStatData['statType'];
+    const gameId = gameStatData['gameId'];
+    var pointsIncrease = 0;
+    return GameStat.findOrCreate({
+      where: {
+        gameId: gameId,
+        userId: gameStatData['userId']
+      }
+    })
+      .then(([gameStat, created]) => {
+
+        switch (statType) {
+          case 'three':
+            pointsIncrease = 3;
+            gameStat.increment('points', { by: 3});
+            break;
+          case 'two':
+            pointsIncrease = 2;
+            gameStat.increment('points', { by: 2});
+            break
+          case 'rebound':
+            gameStat.increment('rebounds', { by: 1});
+            break;
+          case 'assist':
+            gameStat.increment('assists', { by: 1});
+            break;
+        }
+
+        return Game.findOne({
+          where: {
+            id: gameId
+          }
+        })
+      })
+      .then(game => {
+        console.log("GAME FOUND");
+        console.log(game);
+        return game.increment(`${teamType}_points`, {by: pointsIncrease})
+      })
+      .then(game => {
+        return Session.findOne({
+          where: {
+            groupToken: token,
+            end_date: {
+              [Op.gte]: moment().toDate()
+            }
+          },
+          include: [{
+            model: Game,
+            where: {
+              active: true
+            },
+            required: false
+          }]
+      })
+    })
+      .then(session => {
+        const response = {
+          statusCode: 200,
+          headers: jsonResponseHeaders,
+          body: JSON.stringify(session)
+        }        
+        callback(null, response);
+      })
+      .catch(e => {
+        callback(null, {
+          statusCode: 404, 
+          headers: textResponseHeaders, 
+          body: "Failed to update game stats" + e
+        })  
+      })
+  }
+
 
 /**
  **************************

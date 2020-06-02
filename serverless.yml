@@ -146,6 +146,34 @@ functions:
           path: session
           method: post
           cors: true
+          authorizer: verify-token
+
+  getSession:
+    handler: handler.getSession
+    events:
+      - http:
+          path: session
+          method: get
+          cors: true
+          authorizer: verify-token
+  
+  createGame:
+    handler: handler.createGame
+    events:
+      - http:
+          path: game
+          method: post
+          cors: true
+          authorizer: verify-token
+  
+  updateGameStats:
+    handler: handler.addGameStats
+    events:
+      - http:
+          path: game/stats
+          method: post
+          cors: true
+          authorizer: verify-token
 
   createGroup:
     handler: handler.createGroup

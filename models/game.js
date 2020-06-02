@@ -2,7 +2,7 @@ module.exports  = function(sequelize, DataTypes) {
     var Game = sequelize.define('game', {
         id: {
             type: DataTypes.UUID,
-            allowNUll: false,
+            allowNull: false,
             primaryKey: true,
             unique: true,
             defaultValue: DataTypes.UUIDV1
@@ -14,11 +14,6 @@ module.exports  = function(sequelize, DataTypes) {
         away_team_id: {
             type: DataTypes.UUID,
             allowNull: false
-        },
-        session_id: {
-            type: DataTypes.UUID,
-            // FIX ME: Change to FALSE 
-            allowNull: true
         },
         date: {
             type: DataTypes.DATE,
@@ -34,6 +29,11 @@ module.exports  = function(sequelize, DataTypes) {
             type: DataTypes.INTEGER,
             allowNull: false, 
             defaultValue: 0
+        },
+        active: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
         }
     })
     return Game;

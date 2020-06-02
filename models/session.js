@@ -7,11 +7,6 @@ module.exports = function(sequelize, DataTypes) {
             unique: true,
             defaultValue: DataTypes.UUIDV1
         },
-        token: {
-            type: DataTypes.STRING,
-            unique: true,
-            allowNull: false
-        },
         date: {
             type: DataTypes.DATE
         },

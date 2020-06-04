@@ -28,6 +28,7 @@ module.exports = function(sequelize, DataTypes) {
     
     Game.hasMany(GameStat);
     User.hasMany(GameStat);
+    GameStat.belongsTo(User);
 
     return {Team, User, TeamUser, Session, Group, Game, GameStat};
 }

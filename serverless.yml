@@ -165,12 +165,30 @@ functions:
           method: post
           cors: true
           authorizer: verify-token
+    
+  getActiveGame:
+    handler: handler.fetchActiveGame
+    events:
+      - http:
+          path: game/{id}
+          method: get
+          cors: true
+          authorizer: verify-token
   
   updateGameStats:
     handler: handler.addGameStats
     events:
       - http:
           path: game/stats
+          method: post
+          cors: true
+          authorizer: verify-token
+  
+  endGame:
+    handler: handler.endGame
+    events:
+      - http:
+          path: game/end
           method: post
           cors: true
           authorizer: verify-token

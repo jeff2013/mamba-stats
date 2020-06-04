@@ -199,7 +199,6 @@ module.exports.deleteUser = (event, context, callback) => {
     };
     callback(null, response)
   }).catch(e => {
-    console.log(e);
     callback(null, {
       statusCode: 400, 
       headers: textResponseHeaders, 
@@ -264,7 +263,6 @@ module.exports.deleteUser = (event, context, callback) => {
     'Content-Type': 'application/json'
   };
 
-  console.log(event.queryStringParameters);
   const params = event.queryStringParameters;
   const teamId = params.team_id;
 
@@ -370,7 +368,6 @@ module.exports.deleteUser = (event, context, callback) => {
     };
     callback(null, response)
   }).catch(e => {
-    console.log(e);
     callback(null, {
       statusCode: 409, 
       headers: textResponseHeaders, 
@@ -398,16 +395,8 @@ module.exports.deleteUser = (event, context, callback) => {
       end_date: {
         [Op.gte]: moment().toDate()
       }
-    },
-    include: [{
-      model: Game,
-      where: {
-        active: true
-      },
-      required: false
-    }]
+    }
   }).then(session => {
-    console.log(session);
     const response = {
       statusCode: 200, 
       headers: jsonResponseHeaders,
@@ -442,13 +431,28 @@ module.exports.deleteUser = (event, context, callback) => {
     };
 
     var token = event.requestContext.authorizer.principalId || '';
+    const data = event.pathParameters
 
     return Game.findOne({
       where: {
-        groupToken: token
+        sessionId: data.id,
+        active: true
       }
+    }).then(game => { 
+      const response = {
+        statusCode: 200, 
+        headers: jsonResponseHeaders,
+        body: JSON.stringify(game)
+      };
+      callback(null, response)
+   }).catch(e => {
+    callback(null, {
+      statusCode: 404, 
+      headers: textResponseHeaders, 
+      body: "Couldn't create game" + e
     })
- }
+  })
+}
 
  module.exports.createGame = (event, context, callback) => {
   context.callbackWaitsForEmptyEventLoop = false;
@@ -539,32 +543,13 @@ module.exports.deleteUser = (event, context, callback) => {
         })
       })
       .then(game => {
-        console.log("GAME FOUND");
-        console.log(game);
         return game.increment(`${teamType}_points`, {by: pointsIncrease})
       })
       .then(game => {
-        return Session.findOne({
-          where: {
-            groupToken: token,
-            end_date: {
-              [Op.gte]: moment().toDate()
-            }
-          },
-          include: [{
-            model: Game,
-            where: {
-              active: true
-            },
-            required: false
-          }]
-      })
-    })
-      .then(session => {
         const response = {
           statusCode: 200,
           headers: jsonResponseHeaders,
-          body: JSON.stringify(session)
+          body: JSON.stringify(game)
         }        
         callback(null, response);
       })
@@ -575,6 +560,70 @@ module.exports.deleteUser = (event, context, callback) => {
           body: "Failed to update game stats" + e
         })  
       })
+  }
+
+  module.exports.endGame = (event, context, callback) => {
+    context.callbackWaitsForEmptyEventLoop = false;
+
+    const textResponseHeaders = {
+      'Content-Type': 'text/plain'
+    };
+
+    const jsonResponseHeaders = {
+      'Content-Type': 'application/json'
+    };
+
+    const gameId = JSON.parse(event.body)["gameId"];
+    var game;
+
+    return Game.findOne({
+      where: {
+        id: gameId
+      },
+      include: [{
+        model: GameStat,
+        include: [User]
+      }]
+    })
+    .then(game => {
+      game = game;
+      const gameStats = game.game_stats;
+      var promises = [];
+      
+      if (gameStats && gameStats.length != 0) {
+        // FIX ME what if user was deleted? :/
+        gameStats.map(gameStat => {
+          const user = gameStat.user;
+
+          if (user) {
+            promises.push(user.update({
+              points: user.points + gameStat.points, 
+              assists: user.assists + gameStat.assists,
+              rebounds: user.rebounds + gameStat.rebounds,
+              games_played: user.games_played + 1
+            }))
+          }
+        });
+      }
+
+      promises.push(game.update({active: false}));
+      return Promise.all(promises)
+    })
+    .then(res => {
+      const response = {
+        statusCode: 200,
+        headers: jsonResponseHeaders,
+        body: JSON.stringify(game)
+      }        
+      callback(null, response);
+    })
+    .catch(e => {
+      callback(null, {
+        statusCode: 404, 
+        headers: textResponseHeaders, 
+        body: "Failed to end game" + e
+      })  
+    })
   }
 
 
@@ -597,7 +646,6 @@ module.exports.deleteUser = (event, context, callback) => {
 
     var groupData = event.body ? JSON.parse(event.body) : {};
     groupData["token"] = RandomToken.gen({length: 4});
-    console.log(groupData);
     return bcrypt.hash(groupData["password"], 8)
     .then(pass => {
       groupData["password"] = pass
@@ -610,7 +658,6 @@ module.exports.deleteUser = (event, context, callback) => {
       };
       callback(null, response)
     }).catch(e => {
-      console.log(e);
       callback(null, {
         statusCode: 409, 
         headers: textResponseHeaders, 

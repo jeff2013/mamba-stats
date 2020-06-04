@@ -24,17 +24,29 @@ module.exports = function(sequelize, DataTypes) {
             allowNull: false,
             defaultValue: 'Guard'
         },
-        ppg: {
-            type: DataTypes.REAL,
-            defaultValue: 0.0
+        points: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0
         },
-        apg: {
-            type: DataTypes.REAL,
-            defaultValue: 0.0
+        assists: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0
         },
-        rpg: {
-            type: DataTypes.REAL,
-            defaultValue: 0.0
+        rebounds: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0
+        },
+        fouls: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0
+        },
+        games_played: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0
+        },
+        sessions_attended: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0
         }
     }, {
         paranoid: true,

@@ -21,6 +21,6 @@
     "serverless-offline": "^5.12.1"
   },
   "devDependencies": {
-    "minimist": ">=1.2.3"
+    "minimist": ">=1.2.6"
   }
 }
